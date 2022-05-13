@@ -429,22 +429,30 @@ class RingDoorBell(RingGeneric):
         """Return connection status."""
         return self._attrs.get("alerts").get("connection")
 
-    def get_snapshot(self, retries=3, delay=1, filename=None):
+    def get_snapshot(self, retries=3, delay=1):
         """Take a snapshot and download it"""
         url = SNAPSHOT_TIMESTAMP_ENDPOINT
         payload = {"doorbot_ids": [self._attrs.get("id")]}
         self._ring.query(url, method="POST", json=payload)
-        request_time = time.time()
         for _ in range(retries):
             time.sleep(delay)
-            response = self._ring.query(url, method="POST", json=payload).json()
-            if response["timestamps"][0]["timestamp"] / 1000 > request_time:
-                snapshot = self._ring.query(
-                    SNAPSHOT_ENDPOINT.format(self._attrs.get("id")), raw=True
-                ).content
-                if filename:
-                    with open(filename, "wb") as jpg:
-                        jpg.write(snapshot)
-                    return True
-                return snapshot
+            self._ring.query(url, method="POST", json=payload).json()
+
+            return self._ring.query(
+                SNAPSHOT_ENDPOINT.format(self._attrs.get("id")), raw=True
+            ).content
         return False
+
+# def get_snapshot(self, retries=3, delay=1):
+#         """Take a snapshot and download it"""
+#         url = SNAPSHOT_TIMESTAMP_ENDPOINT
+#         payload = {"doorbot_ids": [self._attrs.get("id")]}
+#         self._ring.query(url, method="POST", json=payload)      <--- updated this line
+#         for _ in range(retries):
+#             time.sleep(delay)            
+#             self._ring.query(url, method="POST", json=payload).json()   
+#             #if response["timestamps"][0]["timestamp"] / 1000 > request_time:      <--- commented out this line
+#             return self._ring.query(                             
+#                 SNAPSHOT_ENDPOINT.format(self._attrs.get("id"), raw=True)
+#             ).content                       
+#         return False
